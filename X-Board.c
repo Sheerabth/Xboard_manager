@@ -22,7 +22,7 @@ int main(int argc, char *argv[])
 }
 
 // called when window is closed
-void on_Window_Main_destroy()
+void on_Main_Window_destroy()
 {
     gtk_main_quit();
 }
