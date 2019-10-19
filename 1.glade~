@@ -41,6 +41,7 @@
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="receives_default">True</property>
+                    <signal name="clicked" handler="add_button_clicked" swapped="no"/>
                   </object>
                   <packing>
                     <property name="expand">True</property>
@@ -54,6 +55,7 @@
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="receives_default">True</property>
+                    <signal name="clicked" handler="remove_button_clicked" swapped="no"/>
                   </object>
                   <packing>
                     <property name="expand">True</property>
@@ -67,6 +69,7 @@
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="receives_default">True</property>
+                    <signal name="clicked" handler="edit_button_clicked" swapped="no"/>
                     <signal name="destroy" handler="on___glade_unnamed_8_destroy" swapped="no"/>
                   </object>
                   <packing>
@@ -81,6 +84,7 @@
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="receives_default">True</property>
+                    <signal name="clicked" handler="hotkeys_button_clicked" swapped="no"/>
                   </object>
                   <packing>
                     <property name="expand">True</property>
@@ -94,6 +98,7 @@
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="receives_default">True</property>
+                    <signal name="clicked" handler="history_button_clicked" swapped="no"/>
                   </object>
                   <packing>
                     <property name="expand">True</property>
@@ -107,6 +112,7 @@
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="receives_default">True</property>
+                    <signal name="clicked" handler="clear_list_button_clicked" swapped="no"/>
                   </object>
                   <packing>
                     <property name="expand">True</property>
@@ -120,6 +126,7 @@
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="receives_default">True</property>
+                    <signal name="clicked" handler="help_button_clicked" swapped="no"/>
                   </object>
                   <packing>
                     <property name="expand">True</property>
@@ -204,14 +211,15 @@
                 <property name="can_focus">False</property>
                 <property name="vexpand">True</property>
                 <child>
-                  <object class="GtkButton">
-                    <property name="label" translatable="yes">button</property>
+                  <object class="GtkButton" id="1_button">
+                    <property name="label" translatable="yes">button_1</property>
                     <property name="width_request">155</property>
                     <property name="height_request">30</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="receives_default">True</property>
                     <property name="image_position">bottom</property>
+                    <signal name="clicked" handler="1_button_clicked" swapped="no"/>
                   </object>
                   <packing>
                     <property name="x">25</property>
@@ -219,13 +227,14 @@
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkButton">
-                    <property name="label" translatable="yes">button</property>
+                  <object class="GtkButton" id="3_button">
+                    <property name="label" translatable="yes">button_3</property>
                     <property name="width_request">155</property>
                     <property name="height_request">30</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="receives_default">True</property>
+                    <signal name="clicked" handler="3_button_clicked" swapped="no"/>
                   </object>
                   <packing>
                     <property name="x">25</property>
@@ -233,13 +242,14 @@
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkButton">
-                    <property name="label" translatable="yes">button</property>
+                  <object class="GtkButton" id="2_button">
+                    <property name="label" translatable="yes">button_2</property>
                     <property name="width_request">155</property>
                     <property name="height_request">30</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="receives_default">True</property>
+                    <signal name="clicked" handler="2_button_clicked" swapped="no"/>
                   </object>
                   <packing>
                     <property name="x">25</property>

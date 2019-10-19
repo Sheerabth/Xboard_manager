@@ -1,47 +1,28 @@
-// This example demonstrates the use of clipboards.
-//
-// There is no "main window". This program prints the contents of the
-// clipboard (to demonstrate "copy" functionality), and replaces it
-// with a new string (to demonstrate "paste" functionality).
-//
-// NOTE: If you test this without a clipboard manager running, the
-// new text saved to the clipboard will disappear as soon as this
-// program exits.
+
 
 #include <gdk/gdk.h>
 #include <gtk/gtk.h>
 
-// This callback is invoked when the clipboard contents have been
-// received. The text contents of the clipboard will be in UTF-8 in
-// the `text` parameter.
+
 void text_request_callback(GtkClipboard *clipboard,
                            const gchar *text,
                            gpointer data)
 {
-    // To demonstrate setting a new value into the clipboard, we
-    // choose some text.
+  
     const gchar* new_clipboard_text = "Clipboard test 1";
     if(text == 0 || g_utf8_collate(text, new_clipboard_text) == 0)
     {
-        // If the program was already run, and the clipboard contains
-        // our string already, use a different string. This way when
-        // you run the program multiple times in a row, you'll see the
-        // string changing.
+       
         new_clipboard_text = "Clipboard test 2";
     }
 
-    // This sets the text. I'm passing -1 because I'm lazy -- the
-    // function will call strlen on the string to figure out how long
-    // it is.
+
     gtk_clipboard_set_text(clipboard, new_clipboard_text, -1);
 
-    // Display the content and the contents of the variable we passed
-    // in.
+   
     printf("Clipboard text was %s, value is %8X\n",
            text, *(int*)data);
 
-    // Now that we've monkeyed with the clipboard, our job is done
-    // here.
     gtk_main_quit();
 }
 
