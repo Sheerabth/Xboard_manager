@@ -1,15 +1,16 @@
 #include <stdio.h> 
 #include <sqlite3.h> 
 
-int main(int argc, char** argv) 
+int main() 
 { 
 	sqlite3* DB; 
 	char *sql= "CREATE TABLE Xboard(\
-					FILENAME       TEXT	NOT NULL,\ 
-					FILELOCATION   TEXT    NOT NULL,\ 
+					FILENAME      	TEXT	NOT NULL,\ 
+					FILELOCATION  	TEXT    NOT NULL,\ 
 					FILETYPE		TEXT	NOT NULL,\ 
 					FILESIZE		TEXT	NOT NULL,\
-					DATEADDED      DATE    NOT NULL );";
+					DATEADDED		DATE    NOT NULL,\
+					TARGET			TEXT	NOT NULL);";
 	int exit = 0; 
 	exit = sqlite3_open("X-Board.db", &DB); 
 	char* messaggeError; 

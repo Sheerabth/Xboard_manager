@@ -1,5 +1,6 @@
 #include<stdio.h>
-#include<gtk/gtk.h>
+#include<string.h>
+#include<stdlib.h>
 void main()
 {
     char ch;
@@ -7,12 +8,13 @@ void main()
     char target[25][40];
     system("xclip -o -t TARGETS > target.txt");
     FILE *fp;
-    sleep(0.5);
     fp=fopen("target.txt","r");
-    while(!eof(fp))
+    while(!feof(fp))
     {
-        ch=fgetc(fp);
-        fscanf(fp,"%[^\n]s",target[i]);
+        fscanf(fp,"%s",target[count]);
+        count++;
     }
+    strcpy(target[count],"\0");
+    count--;
     fclose(fp);
 }
