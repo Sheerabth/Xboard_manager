@@ -17,4 +17,6 @@ void main()
     strcpy(target[count],"\0");
     count--;
     fclose(fp);
+    for(i=0;i<count;i++)
+        printf("%s\n",target[i]);
 }
