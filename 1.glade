@@ -2,11 +2,21 @@
 <!-- Generated with glade 3.22.1 -->
 <interface>
   <requires lib="gtk+" version="3.20"/>
+  <object class="GtkTreeStore" id="Main_Tree_Store">
+    <columns>
+      <!-- column-name Content -->
+      <column type="gchararray"/>
+      <!-- column-name Content Type -->
+      <column type="gchararray"/>
+      <!-- column-name Size -->
+      <column type="gchararray"/>
+    </columns>
+  </object>
   <object class="GtkWindow" id="Window_Main">
     <property name="width_request">800</property>
     <property name="height_request">600</property>
     <property name="can_focus">False</property>
-    <property name="title" translatable="yes">Gtk_window</property>
+    <property name="title" translatable="yes">Xboard Manger</property>
     <signal name="destroy" handler="on_Main_Window_destroy" swapped="no"/>
     <child>
       <placeholder/>
@@ -160,17 +170,52 @@
             <property name="orientation">vertical</property>
             <property name="homogeneous">True</property>
             <child>
-              <object class="GtkTreeView" id="Main_Content_Tree">
+              <object class="GtkViewport" id="Main_Content_ViewPort">
                 <property name="visible">True</property>
-                <property name="can_focus">True</property>
-                <child internal-child="selection">
-                  <object class="GtkTreeSelection"/>
+                <property name="can_focus">False</property>
+                <child>
+                  <object class="GtkTreeView" id="Main_Content_Tree">
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="hexpand">True</property>
+                    <property name="vexpand">True</property>
+                    <property name="model">Main_Tree_Store</property>
+                    <child internal-child="selection">
+                      <object class="GtkTreeSelection" id="select"/>
+                    </child>
+                    <child>
+                      <object class="GtkTreeViewColumn" id="content_column">
+                        <property name="title" translatable="yes">Content</property>
+                        <child>
+                          <object class="GtkCellRendererText" id="content_renderer"/>
+                          <attributes>
+                            <attribute name="width-chars">4</attribute>
+                          </attributes>
+                        </child>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkTreeViewColumn" id="content_type_column">
+                        <property name="title" translatable="yes">Content Type</property>
+                        <child>
+                          <object class="GtkCellRendererText" id="content_type_renderer"/>
+                        </child>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkTreeViewColumn" id="size_column">
+                        <property name="title" translatable="yes">Size</property>
+                        <child>
+                          <object class="GtkCellRendererText" id="size_renderer"/>
+                        </child>
+                      </object>
+                    </child>
+                  </object>
                 </child>
               </object>
               <packing>
-                <property name="expand">False</property>
+                <property name="expand">True</property>
                 <property name="fill">True</property>
-                <property name="padding">6</property>
                 <property name="position">0</property>
               </packing>
             </child>
