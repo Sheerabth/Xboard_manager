@@ -4,14 +4,16 @@
 int main() 
 { 
 	sqlite3* DB; 
-	char *sql= "CREATE TABLE XBOARD(\
-					FILENAME      	TEXT	NOT NULL,\ 
-					FILELOCATION  	TEXT    NOT NULL,\ 
-					FILETYPE		TEXT	NOT NULL,\ 
-					FILESIZE		TEXT	NOT NULL,\
-					DATEADDED		DATE    NOT NULL,\
-					TARGET			TEXT	NOT NULL,\
-					FILE_EXISTANCE	BIT		NOT NULL);";
+	char *sql= "CREATE TABLE XBOARD_DATA IF NOT EXISTS(\
+					CONTENT 		TEXT NOT NULL	,\
+					CONTENTTYPE		TEXT NOT NULL	,\
+					SIZE	 		TEXT NOT NULL	,\
+					FILENAME      	TEXT	,\
+					FILELOCATION  	TEXT    ,\
+					FILETYPE		TEXT	,\
+					DATEADDED		DATE    ,\
+					TARGET			TEXT	,\
+					FILE_EXISTANCE	BIT		);";
 	int exit = 0; 
 	exit = sqlite3_open("X-Board.db", &DB); 
 	char* messaggeError; 
