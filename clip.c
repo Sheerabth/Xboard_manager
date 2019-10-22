@@ -10,7 +10,9 @@
     {
         // To demonstrate setting a new value into the clipboard, we
         // choose some text.
-        const gchar* new_clipboard_text = "Clipboard test 1";
+        const gchar* new_clipboard_text = "x-special/nautilus-clipboard\
+\ncopy\
+\nfile:///root/Desktop/Xboard_manager";
         if(text == 0 || g_utf8_collate(text, new_clipboard_text) == 0)
         {
             // If the program was already run, and the clipboard contains
