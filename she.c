@@ -5,9 +5,9 @@ int main()
 { 
 	sqlite3* DB; 
 	char *sql= "CREATE TABLE XBOARD_DATA IF NOT EXISTS(\
-					CONTENT 		TEXT NOT NULL	,\
-					CONTENTTYPE		TEXT NOT NULL	,\
-					SIZE	 		TEXT NOT NULL	,\
+					CONTENT 		TEXT 	,\
+					CONTENTTYPE		TEXT 	,\
+					SIZE	 		TEXT 	,\
 					FILENAME      	TEXT	,\
 					FILELOCATION  	TEXT    ,\
 					FILETYPE		TEXT	,\
