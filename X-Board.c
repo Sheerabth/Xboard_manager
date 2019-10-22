@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <sys/types.h>
 #include <signal.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -10,9 +11,8 @@
 #include <time.h>
 #include <ctype.h>
 #include <sys/mman.h>
-#include <sys/types.h>
-#include <sys/stat.h>
 #include <sqlite3.h>
+#include <sys/stat.h>
 
 
 sqlite3 *DB; 
@@ -202,40 +202,35 @@ long int findSize(const char *file_name)
 
 void add_content(GtkClipboard *clipboard,const gchar *text,gpointer data)
 {
-     sqlite3* DB; 
+    sqlite3* DB; 
     char* messaggeError; 
     int exit = sqlite3_open("X-Board.db", &DB); 
 
-    char sql[10000];
+    char sql[10000]={0};
     time_t t = time(NULL);
     struct tm tm = *localtime(&t);
     int flg;
     long size;
     char *abs_path;
-    const gchar* new_clipboard_text = "Clipboard test 1";
-    if(text == 0 || g_utf8_collate(text, new_clipboard_text) == 0)
-    {
-        new_clipboard_text = "Clipboard test 2";
-    }
-    gtk_clipboard_set_text(clipboard, new_clipboard_text, -1);
-    //printf("Clipboard text was %s, value is %8X\n",text, *(int*)data);
-    flg=abolute_path(text,abs_path);
+    
+    flg=absolute_path(text,abs_path);
     if(!flg)
     {
-        sprintf(sql,"INSERT INTO TABLE XBOARD_DATA VALUES\
-                        \"%s\",\"File\",\"%ld\",\"%s\",\"%s\",\"%s\",\
-                        %d/%d/%d,\"x-speacial/gnome-copied-files\",1",text,findSize(text),text,abs_path,\
-                        index(abs_path,'.')+1,tm.tm_year + 1900,tm.tm_mon + 1,tm.tm_mday);
-
+        sprintf(sql,"INSERT INTO XBOARD_DATA VALUES(\
+        \"%s\",\"File\",\"%ld\",\"%s\",\"%s\",\"%s\",\
+%d/%d/%d,\"x-special/gnome-copied-files\",1);",text,findSize(text),text,abs_path,\
+index(abs_path,'.')+1,tm.tm_year + 1900,tm.tm_mon + 1,tm.tm_mday);
+        printf("sql: %s\nmess:%s",sql);
     }
     else
     {
-        sprintf(sql,"INSERT INTO TABLE XBOARD_DATA VALUES\
-                        \"%s\",\"text\",\"%ld",NULL,NULL,NULL,%d/%d/%d,\"text/plain\",0",
-                        text,strlen(text),tm.tm_year + 1900,tm.tm_mon + 1,tm.tm_mday);
+        sprintf(sql,"INSERT INTO XBOARD_DATA (CONTENT,CONTENT_TYPE,SIZE) VALUES(\
+\"%s\",\"text\",\"%ld\");",text,strlen(text));
+    printf("sql: %s\nmess:%s",sql);
+        
     }
-
-    exit = sqlite3_exec(DB, sql.c_str(), NULL, 0, &messaggeError); 
+    exit = sqlite3_exec(DB, sql, NULL, 0, &messaggeError); 
+    printf("sql: %s\nmess:%s",sql,messaggeError);
     if (exit != SQLITE_OK) { 
         printf("Error Insert\n"); 
         sqlite3_free(messaggeError); 
@@ -254,7 +249,10 @@ void add_button_clicked()
     gtk_clipboard_request_text(clipboard, add_content, &value);
 }
 
-
+void clear_list_button_clicked()
+{
+        
+}
 
 int main(int argc, char *argv[])
 {
