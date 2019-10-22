@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <sys/types.h>
 #include <signal.h>
+#include <stdio.h>
 #include <unistd.h>
 #include <string.h>
 #include <gtk/gtk.h>
@@ -35,6 +36,7 @@ GtkTreeIter iter;
 
 GtkTextView *File_Details;
 GtkTextBuffer *buffer;
+gchar *selected_value;
 
 void on_destroy();
 
@@ -48,18 +50,15 @@ int setdata(void* data, int argc, char** argv, char** azColName)
     return 0; 
 } 
 
-
 static int additional_info(void* data, int argc, char** argv, char** azColName) 
 { 
-    printf("sql executed\n");
     if(strcmp(&argv[1][0],"File")!=0)
-        gtk_text_buffer_set_text (buffer, "Select a file list item for additional data", -1);
+        gtk_text_buffer_set_text (buffer, "\n\n\n\n\tSelect a file list item for additional data", -1);
     else
     {
-        printf("Here");
         char disp[1000]={0};
-        sprintf(disp,"\n\nFILE NAME : %s\nFILE LOCATION : %s\n\
-        FILE TYPE : %s\nDATE ADDED : %s\nEXISTENCE : %s\0",argv[3],argv[4],argv[5],argv[6],argv[7] );
+        sprintf(disp,"\n\n\n\n\tFILE NAME : %s\n\n\tFILE LOCATION : %s\n\n\
+        FILE TYPE : %s\n\n\tDATE ADDED : %s\n\n\tEXISTENCE : %s\0",argv[3],argv[4],argv[5],argv[6],argv[7] );
         gtk_text_buffer_set_text (buffer, disp, -1);
     }
     return 0; 
@@ -68,83 +67,23 @@ static int additional_info(void* data, int argc, char** argv, char** azColName)
 
 void on_select_changed(GtkWidget *cell)
 {
-    gchar *value;
     GtkTreeIter iter;
     GtkTreeModel *model;
     if(gtk_tree_selection_get_selected(GTK_TREE_SELECTION(cell),&model,&iter)==FALSE)
     {   
-        printf("return\n");
+        selected_value=NULL;
+        printf("Null Val set\n");
         return ;
     }
-    printf("selected\n");
-    gtk_tree_model_get(model,&iter,0,&value,-1);
+    gtk_tree_model_get(model,&iter,0,&selected_value,-1);
     char sql[100]={0};
-    sprintf(sql,"SELECT * FROM XBOARD_DATA WHERE CONTENT=\"%s\";",value);
-    printf("string is %s\n",sql);
+    printf(" on select Val is %s\n",selected_value);
+    sprintf(sql,"SELECT * FROM XBOARD_DATA WHERE CONTENT=\"%s\";",selected_value);
     sqlite3_exec(DB, sql, additional_info, 0, NULL);
 }
 
 void on_window_destroy(){
     gtk_main_quit();
-}
-
-void add_content(GtkClipboard *clipboard, GdkAtom *atoms, gint n_atoms, gpointer data){
-    FILE *fptr;
-    fptr = fopen("anc.txt", "w");
-    for (int i = 0; i < n_atoms; i++)
-    {
-    }
-    fclose(fptr);
-}
-
-void add_button_clicked(){
-    GtkClipboard *clipboard = gtk_clipboard_get(GDK_SELECTION_CLIPBOARD);
-    int value = 0xDECAFBAD;
-    gtk_clipboard_request_targets(clipboard, add_content, value);
-
-    printf("add\n");
-}
-
-void remove_button_clicked(){
-    GtkClipboard *clipboard = gtk_clipboard_get(GDK_SELECTION_CLIPBOARD);
-    int value = 0xDECAFBAD;
-
-    printf("remove\n");
-}
-
-void edit_button_clicked(){
-    GtkClipboard *clipboard = gtk_clipboard_get(GDK_SELECTION_CLIPBOARD);
-    int value = 0xDECAFBAD;
-
-    printf("edit\n");
-}
-
-void hotkeys_button_clicked(){
-    GtkClipboard *clipboard = gtk_clipboard_get(GDK_SELECTION_CLIPBOARD);
-    int value = 0xDECAFBAD;
-
-    printf("hotkeys\n");
-}
-
-void history_button_clicked(){
-    GtkClipboard *clipboard = gtk_clipboard_get(GDK_SELECTION_CLIPBOARD);
-    int value = 0xDECAFBAD;
-
-    printf("history\n");
-}
-
-void clear_list_button_clicked(){
-    GtkClipboard *clipboard = gtk_clipboard_get(GDK_SELECTION_CLIPBOARD);
-    int value = 0xDECAFBAD;
-
-    printf("clear\n");
-}
-
-void help_button_clicked(){
-    GtkClipboard *clipboard = gtk_clipboard_get(GDK_SELECTION_CLIPBOARD);
-    int value = 0xDECAFBAD;
-
-    printf("help\n");
 }
 
 void button_1_clicked(){

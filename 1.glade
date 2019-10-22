@@ -16,6 +16,7 @@
     <property name="can_focus">False</property>
     <property name="default_width">1024</property>
     <property name="default_height">768</property>
+    <signal name="destroy" handler="on_window_destroy" swapped="no"/>
     <child>
       <placeholder/>
     </child>
