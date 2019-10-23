@@ -156,20 +156,6 @@
                     <property name="spacing">20</property>
                     <property name="layout_style">start</property>
                     <child>
-                      <object class="GtkButton" id="Add_Clipboard_Content_Button">
-                        <property name="label" translatable="yes">Add Content from Clipboard</property>
-                        <property name="visible">True</property>
-                        <property name="can_focus">True</property>
-                        <property name="receives_default">True</property>
-                        <signal name="clicked" handler="add_button_clicked" swapped="no"/>
-                      </object>
-                      <packing>
-                        <property name="expand">True</property>
-                        <property name="fill">True</property>
-                        <property name="position">0</property>
-                      </packing>
-                    </child>
-                    <child>
                       <object class="GtkButton" id="DB_Browser_Button">
                         <property name="label" translatable="yes">Open List in DB browser</property>
                         <property name="visible">True</property>
@@ -196,20 +182,6 @@
                         <property name="expand">True</property>
                         <property name="fill">True</property>
                         <property name="position">4</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <object class="GtkButton" id="Help_Button">
-                        <property name="label" translatable="yes">Help</property>
-                        <property name="visible">True</property>
-                        <property name="can_focus">True</property>
-                        <property name="receives_default">True</property>
-                        <signal name="clicked" handler="help_button_clicked" swapped="no"/>
-                      </object>
-                      <packing>
-                        <property name="expand">True</property>
-                        <property name="fill">True</property>
-                        <property name="position">5</property>
                       </packing>
                     </child>
                   </object>

@@ -9,7 +9,6 @@
 #include <gdk/gdk.h>
 #include <math.h>
 #include <time.h>
-#include <ctype.h>
 #include <sys/mman.h>
 #include <sqlite3.h>
 #include <sys/stat.h>
@@ -95,32 +94,59 @@ void remove_data(GtkWidget *menu_item_remove, gpointer userdata)
     GtkTreeIter iter;
     GtkTreeModel *model;
     gchar *selected_value;
-    printf("sdfsdfv");
     if (gtk_tree_selection_get_selected(GTK_TREE_SELECTION(userdata), &model, &iter) != FALSE)
     {
-        char sql[100] = {0};
+        char *message, sql[30000] = {0};
         gtk_tree_model_get(model, &iter, 0, &selected_value, -1);
         sprintf(sql, "DELETE FROM XBOARD_DATA WHERE CONTENT=\"%s\";", selected_value);
-        sqlite3_exec(DB, sql, NULL, NULL, NULL);
-        sqlite3_exec(DB, "COMMIT", NULL, NULL, NULL);
+        int exit = sqlite3_exec(DB, sql, NULL, 0, &message);
+        if (exit != SQLITE_OK)
+        {
+            printf("Error Insert\n");
+            sqlite3_free(&message);
+        }
+        else
+            printf("Records created Successfully!\n");
+        sqlite3_exec(DB, "COMMIT", NULL, 0, NULL);
         gtk_tree_store_remove(Main_Tree_Store, &iter);
         gtk_text_buffer_set_text(buffer, "\n\n\n\n\tSelect a list item for additional data", -1);
     }
 }
 
-void view_popup_menu(GdkEventButton *click_event, gpointer userdata)
+void clip_new_content(GtkWidget *menu_add_clip, gpointer userdata)
 {
-    GtkWidget *Context_menu, *menu_item_remove, *menu_add_to clip;
+    GtkTreeIter iter;
+    GtkTreeModel *model;
+    gchar *selected_value;
+    if (gtk_tree_selection_get_selected(GTK_TREE_SELECTION(userdata), &model, &iter) != FALSE)
+    {
+        gtk_tree_model_get(model, &iter, 0, &selected_value, -1);
+        gtk_clipboard_set_text(selected_clipboard, selected_value, -1);
+    }
+}
 
+void view_Context_menu(GdkEventButton *click_event, gpointer userdata)
+{
+    GtkWidget *Context_menu, *menu_item_remove, *menu_add_clip;
+    GtkTreeIter iter;
+    GtkTreeModel *model;
+    gchar *selected_value;
     Context_menu = gtk_menu_new();
 
     menu_item_remove = gtk_menu_item_new_with_label("Remove");
-
+    menu_add_clip = gtk_menu_item_new_with_label("Add to Clipboard");
     g_signal_connect(menu_item_remove, "activate",
                      (GCallback)remove_data, userdata);
-
+    g_signal_connect(menu_add_clip, "activate",
+                     (GCallback)clip_new_content, userdata);
     gtk_menu_shell_append(GTK_MENU_SHELL(Context_menu), menu_item_remove);
 
+    if (gtk_tree_selection_get_selected(GTK_TREE_SELECTION(userdata), &model, &iter) != FALSE)
+    {
+        gtk_tree_model_get(model, &iter, 1, &selected_value, -1);
+        if (strcmp(selected_value, "Text") == 0)
+            gtk_menu_shell_append(GTK_MENU_SHELL(Context_menu), menu_add_clip);
+    }
     gtk_widget_show_all(Context_menu);
 
     gtk_menu_popup(GTK_MENU(Context_menu), NULL, NULL, NULL, NULL,
@@ -128,7 +154,7 @@ void view_popup_menu(GdkEventButton *click_event, gpointer userdata)
                    gdk_event_get_time((GdkEvent *)click_event));
 }
 
-void view_onButtonPressed(GtkWidget *treeview, GdkEventButton *click_event, gpointer userdata)
+void mouse_clicked(GtkWidget *treeview, GdkEventButton *click_event, gpointer userdata)
 {
     if (click_event->type == GDK_BUTTON_PRESS && click_event->button == 3)
     {
@@ -148,8 +174,15 @@ void view_onButtonPressed(GtkWidget *treeview, GdkEventButton *click_event, gpoi
                 gtk_tree_selection_unselect_all(selected);
                 gtk_tree_selection_select_path(selected, path);
                 gtk_tree_path_free(path);
+                GtkTreeIter iter;
+                GtkTreeModel *model;
+                gchar *selected_value;
+
+                if (gtk_tree_selection_get_selected(GTK_TREE_SELECTION(selected), &model, &iter))
+                {
+                    view_Context_menu(click_event, selected);
+                }
             }
-            view_popup_menu(click_event, selected);
         }
     }
 }
@@ -229,12 +262,6 @@ void clipboard_changed(GtkClipboard *clipboard, GdkEvent *event, gpointer data)
     }
 }
 
-void add_button_clicked()
-{
-    GtkClipboard *clipboard = gtk_clipboard_get(GDK_SELECTION_CLIPBOARD);
-    int value = 0xDECAFBAD;
-    gtk_clipboard_request_text(clipboard, add_content, &value);
-}
 
 void clear_list_button_clicked()
 {
@@ -270,10 +297,6 @@ void open_DBbrowser()
     system("sqlitebrowser X-Board.db");
 }
 
-void help_button_clicked()
-{
-}
-
 int main(int argc, char *argv[])
 {
     gtk_init(&argc, &argv);
@@ -307,9 +330,8 @@ int main(int argc, char *argv[])
     gtk_tree_view_column_add_attribute(content_type_column, content_type_renderer, "text", 1);
     gtk_tree_view_column_add_attribute(size_column, size_renderer, "text", 2);
 
-    g_signal_connect(Main_Content_Tree, "button-press-event", (GCallback)view_onButtonPressed, NULL);
+    g_signal_connect(Main_Content_Tree, "button-press-event", (GCallback)mouse_clicked, NULL);
     g_signal_connect(selected_clipboard, "owner-change", G_CALLBACK(clipboard_changed), NULL);
-    //g_signal_connect(Main_Content_Tree, "popup-menu", (GCallback)view_onPopupMenu, NULL);
 
     char *sql = "CREATE TABLE IF NOT EXISTS XBOARD_DATA(\
                     CONTENT 		TEXT NOT NULL	,\
