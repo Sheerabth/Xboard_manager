@@ -31,18 +31,19 @@ GtkTreeSelection *selected;
 GtkCellRenderer *content_renderer;
 GtkCellRenderer *content_type_renderer;
 GtkCellRenderer *size_renderer;
+GtkTreeIter iter1;
 GtkTreeIter iter;
 
 GtkTextView *File_Details;
 GtkTextBuffer *buffer;
-GtkClipboard* selected_clipboard;
+GtkClipboard *selected_clipboard;
 
 int setdata(void *data, int count, char **cell_data, char **column_name)
 {
-    gtk_tree_store_append(Main_Tree_Store, &iter, NULL);
-    gtk_tree_store_set(Main_Tree_Store, &iter, 0, &cell_data[0][0], -1);
-    gtk_tree_store_set(Main_Tree_Store, &iter, 1, &cell_data[1][0], -1);
-    gtk_tree_store_set(Main_Tree_Store, &iter, 2, &cell_data[2][0], -1);
+    gtk_tree_store_append(Main_Tree_Store, &iter1, NULL);
+    gtk_tree_store_set(Main_Tree_Store, &iter1, 0, &cell_data[0][0], -1);
+    gtk_tree_store_set(Main_Tree_Store, &iter1, 1, &cell_data[1][0], -1);
+    gtk_tree_store_set(Main_Tree_Store, &iter1, 2, &cell_data[2][0], -1);
     return 0;
 }
 
@@ -162,64 +163,67 @@ int absolute_path(char *file_path, char *full_path)
         return -1;
 }
 
-long int findSize(const char *file_name)
+void findSize(char *path, char *size)
 {
-    struct stat st;
-    if (stat(file_name, &st) == 0)
-        return (st.st_size);
-    else
-        return -1;
+    char str[10000];
+    sprintf(str, "du -sh --apparent-size %s > size.txt", path);
+    system(str);
+    FILE *fp;
+    fp = fopen("size.txt", "r");
+    fscanf(fp, "%[^\t]s", size);
+    printf("\nsize=%s\n", size);
+    fclose(fp);
 }
 
 void add_content(GtkClipboard *clipboard, const gchar *text, gpointer data)
 {
-    sqlite3 *DB;
-    char *messaggeError;
-    int result = sqlite3_open("X-Board.db", &DB);
 
-    char sql[10000] = {0};
+    char sql[3000] = {0};
     time_t t = time(NULL);
     struct tm tm = *localtime(&t);
     int flg;
-    long size;
-    char *abs_path;
+    char size[100];
+    char abs_path[2000];
 
     flg = absolute_path(text, abs_path);
     if (!flg)
     {
-        sprintf(sql, "INSERT INTO XBOARD_DATA VALUES(\"%s\",\"File\",\"%ld\",\"%s\",\"%s\",\"%s\",%d/%d/%d,\"x-special/gnome-copied-files\",1);",
-                text, findSize(text), text, abs_path,
-                index(abs_path, '.') + 1, tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday);
-        printf("sql: %s\nmess:%s", sql);
+        findSize(abs_path, size);
+        sprintf(sql, "INSERT INTO XBOARD_DATA (CONTENT,CONTENT_TYPE,SIZE,FILE_NAME,FILE_LOCATION,DATE_ADDED,TARGET,FILE_EXISTANCE)\
+         VALUES(\"%s\",\"File\",\"%s\",\"%s\",\"%s\",\%d/%d/%d,\"x-special/gnome-copied-files\",1);"
+        , text, size, index(text,'/')+1, abs_path, tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday);
+        gtk_tree_store_append(Main_Tree_Store, &iter1, NULL);
+        gtk_tree_store_set(Main_Tree_Store, &iter1, 0, text, -1);
+        gtk_tree_store_set(Main_Tree_Store, &iter1, 1, "File", -1);
+        gtk_tree_store_set(Main_Tree_Store, &iter1, 2, size, -1);
+        //  printf("sql: %s\nmess:%s",sql);
     }
     else
     {
-        sprintf(sql, "INSERT INTO XBOARD_DATA (CONTENT,CONTENT_TYPE,SIZE) VALUES(\"%s\",\"text\",\"%ld\");",
-                text, strlen(text));
-        printf("sql: %s\nmess:%s", sql);
+        sprintf(sql, "INSERT INTO XBOARD_DATA (CONTENT,CONTENT_TYPE,SIZE) VALUES(\"%s\",\"text\",\"%ld\");", text, strlen(text));
+        gtk_tree_store_append(Main_Tree_Store, &iter1, NULL);
+        gtk_tree_store_set(Main_Tree_Store, &iter1, 0, text, -1);
+        gtk_tree_store_set(Main_Tree_Store, &iter1, 1, "text", -1);
+        gtk_tree_store_set(Main_Tree_Store, &iter1, 2, "temptext", -1);
     }
-    result = sqlite3_exec(DB, sql, NULL, 0, &messaggeError);
-    printf("sql: %s\nmess:%s", sql, messaggeError);
-    if (result != SQLITE_OK)
-    {
+    printf("%s\n", sql);
+    char *message;
+    int exit=sqlite3_exec(DB, sql, NULL, 0, &message);
+    if (exit != SQLITE_OK) { 
         printf("Error Insert\n");
-        sqlite3_free(messaggeError);
-    }
+        sqlite3_free(&message);
+    } 
     else
         printf("Records created Successfully!\n");
-
-    sqlite3_close(DB);
 }
 
-
-void handle_owner_change(GtkClipboard *clipboard,
-                         GdkEvent *event,
-                         gpointer data)
+void clipboard_changed(GtkClipboard *clipboard, GdkEvent *event, gpointer data)
 {
-    char* text = gtk_clipboard_wait_for_text(clipboard);
-    if(text)
+    char *text = gtk_clipboard_wait_for_text(clipboard);
+    if (text)
     {
         printf("%s\n", text);
+        add_content(clipboard, text, data);
     }
 }
 
@@ -234,7 +238,7 @@ void clear_list_button_clicked()
 {
 
     int result = 0;
-    char arr[150] = {0}, *messaggeError, *drop = "DROP TABLE IF EXISTS XBOARD_DATA;";
+    char *messaggeError, *drop = "DROP TABLE IF EXISTS XBOARD_DATA;";
     sqlite3_exec(DB, drop, NULL, 0, NULL);
     sqlite3_close(DB);
 
@@ -244,7 +248,6 @@ void clear_list_button_clicked()
 					SIZE	 		TEXT NOT NULL	,\
 					FILE_NAME      	TEXT	,\
 					FILE_LOCATION  	TEXT    ,\
-					FILE_TYPE		TEXT	,\
 					DATE_ADDED		DATE    ,\
 					TARGET			TEXT	,\
 					FILE_EXISTANCE	BIT		);";
@@ -268,7 +271,6 @@ void open_DBbrowser()
 
 void help_button_clicked()
 {
-
 }
 
 int main(int argc, char *argv[])
@@ -291,7 +293,7 @@ int main(int argc, char *argv[])
     size_renderer = GTK_CELL_RENDERER(gtk_builder_get_object(builder, "size_renderer"));
     content_type_renderer = GTK_CELL_RENDERER(gtk_builder_get_object(builder, "content_type_renderer"));
     selected = GTK_TREE_SELECTION(gtk_builder_get_object(builder, "Main_Tree_selector"));
-    selected_clipboard= gtk_clipboard_get(GDK_SELECTION_CLIPBOARD);
+    selected_clipboard = gtk_clipboard_get(GDK_SELECTION_CLIPBOARD);
 
     File_Details = GTK_TEXT_VIEW(gtk_builder_get_object(builder, "File_Details"));
     buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(File_Details));
@@ -305,7 +307,7 @@ int main(int argc, char *argv[])
     gtk_tree_view_column_add_attribute(size_column, size_renderer, "text", 2);
 
     g_signal_connect(Main_Content_Tree, "button-press-event", (GCallback)view_onButtonPressed, NULL);
-    g_signal_connect(selected_clipboard, "owner-change",G_CALLBACK(handle_owner_change), NULL);
+    g_signal_connect(selected_clipboard, "owner-change", G_CALLBACK(clipboard_changed), NULL);
     //g_signal_connect(Main_Content_Tree, "popup-menu", (GCallback)view_onPopupMenu, NULL);
 
     char *sql = "CREATE TABLE IF NOT EXISTS XBOARD_DATA(\
@@ -314,7 +316,6 @@ int main(int argc, char *argv[])
 					SIZE	 		TEXT NOT NULL	,\
 					FILE_NAME      	TEXT	,\
 					FILE_LOCATION  	TEXT    ,\
-					FILE_TYPE		TEXT	,\
 					DATE_ADDED		DATE    ,\
 					TARGET			TEXT	,\
 					FILE_EXISTANCE	BIT		);";
