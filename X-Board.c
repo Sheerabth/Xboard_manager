@@ -38,6 +38,9 @@ GtkTextView *File_Details;
 GtkTextBuffer *buffer;
 GtkClipboard *selected_clipboard;
 
+int absolute_path(char *, char *);
+
+
 int setdata(void *data, int count, char **cell_data, char **column_name)
 {
     gtk_tree_store_append(Main_Tree_Store, &iter1, NULL);
@@ -49,14 +52,20 @@ int setdata(void *data, int count, char **cell_data, char **column_name)
 
 static int additional_info(void *data, int argc, char **argv, char **azColName)
 {
-    if (strcmp(&argv[1][0], "File") != 0)
-        gtk_text_buffer_set_text(buffer, "\n\n\n\n\tSelect a file list item for additional data", -1);
-    else
+    if (strcmp(&argv[0][0], "Text") == 0)
     {
         char disp[1000] = {0};
+        sprintf(disp, "\n\n\n\n\tDATE ADDED : %s\n\n\tTARGET : %s\0", &argv[3][0], &argv[4][0]);
+        gtk_text_buffer_set_text(buffer, disp, -1);
+
+    }
+    else if(strcmp(&argv[0][0], "File") == 0)
+    {
+        char disp[1000] = {0};
+        int flg = absolute_path(&argv[2][0],NULL);
         sprintf(disp, "\n\n\n\n\tFILE NAME : %s\n\n\tFILE LOCATION : %s\n\n\
-        FILE TYPE : %s\n\n\tDATE ADDED : %s\n\n\tEXISTENCE : %s\0",
-                argv[3], argv[4], argv[5], argv[6], argv[7]);
+        DATE ADDED : %s\n\n\tTARGET : %s\n\n\tEXISTENCE : %d\0",
+        &argv[1][0], &argv[2][0], &argv[3][0], &argv[4][0],flg);
         gtk_text_buffer_set_text(buffer, disp, -1);
     }
     return 0;
@@ -73,8 +82,8 @@ void on_select_changed(GtkWidget *selection)
         return;
     }
     gtk_tree_model_get(model, &iter, 0, &selected_value, -1);
-    char sql[100] = {0};
-    sprintf(sql, "SELECT * FROM XBOARD_DATA WHERE CONTENT=\"%s\";", selected_value);
+    char sql[500] = {0};
+    sprintf(sql, "SELECT CONTENT_TYPE,FILE_NAME,FILE_LOCATION,DATE_ADDED,TARGET FROM XBOARD_DATA WHERE CONTENT=\"%s\";", selected_value);
     sqlite3_exec(DB, sql, additional_info, 0, NULL);
 }
 
@@ -146,15 +155,6 @@ gboolean view_onButtonPressed(GdkEventButton *click_event, gpointer userdata)
     return FALSE;
 }
 
-/*
-gboolean view_onPopupMenu(GtkWidget *Main_Content_Tree, gpointer userdata)
-{
-    view_popup_menu(Main_Content_Tree, NULL, userdata);
-
-    return TRUE; 
-}
-*/
-
 int absolute_path(char *file_path, char *full_path)
 {
     if (realpath(file_path, full_path) != NULL)
@@ -182,16 +182,16 @@ void add_content(GtkClipboard *clipboard, const gchar *text, gpointer data)
     time_t t = time(NULL);
     struct tm tm = *localtime(&t);
     int flg;
-    char size[100];
-    char abs_path[2000];
+    char size[20];
 
-    flg = absolute_path(text, abs_path);
+    flg = absolute_path((char*)text, NULL);
+   
     if (!flg)
     {
-        findSize(abs_path, size);
-        sprintf(sql, "INSERT INTO XBOARD_DATA (CONTENT,CONTENT_TYPE,SIZE,FILE_NAME,FILE_LOCATION,DATE_ADDED,TARGET,FILE_EXISTANCE)\
-         VALUES(\"%s\",\"File\",\"%s\",\"%s\",\"%s\",\%d/%d/%d,\"x-special/gnome-copied-files\",1);"
-        , text, size, index(text,'/')+1, abs_path, tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday);
+        findSize((char *)text, size);
+        sprintf(sql, "INSERT INTO XBOARD_DATA (CONTENT,CONTENT_TYPE,SIZE,FILE_NAME,FILE_LOCATION,DATE_ADDED,TARGET)\
+        VALUES(\"%s\",\"File\",\"%s\",\"%s\",\"%s\",\"%d/%d/%d\",\"x-special/gnome-copied-files\");"
+        ,text, size, rindex(text,'/')+1, text, tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday);
         gtk_tree_store_append(Main_Tree_Store, &iter1, NULL);
         gtk_tree_store_set(Main_Tree_Store, &iter1, 0, text, -1);
         gtk_tree_store_set(Main_Tree_Store, &iter1, 1, "File", -1);
@@ -200,11 +200,14 @@ void add_content(GtkClipboard *clipboard, const gchar *text, gpointer data)
     }
     else
     {
-        sprintf(sql, "INSERT INTO XBOARD_DATA (CONTENT,CONTENT_TYPE,SIZE) VALUES(\"%s\",\"text\",\"%ld\");", text, strlen(text));
+        sprintf(sql, "INSERT INTO XBOARD_DATA (CONTENT,CONTENT_TYPE,SIZE,DATE_ADDED,TARGET) VALUES(\"%s\",\"Text\",\"%d characters\",\"%d/%d/%d\",\"text-plain/\");",
+        text, (int)strlen(text), tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday);
+        char char_count[15]={0};
+        sprintf(char_count,"%d characters",(int)strlen(text));
         gtk_tree_store_append(Main_Tree_Store, &iter1, NULL);
         gtk_tree_store_set(Main_Tree_Store, &iter1, 0, text, -1);
-        gtk_tree_store_set(Main_Tree_Store, &iter1, 1, "text", -1);
-        gtk_tree_store_set(Main_Tree_Store, &iter1, 2, "temptext", -1);
+        gtk_tree_store_set(Main_Tree_Store, &iter1, 1, "Text", -1);
+        gtk_tree_store_set(Main_Tree_Store, &iter1, 2, char_count, -1);
     }
     printf("%s\n", sql);
     char *message;
@@ -248,9 +251,8 @@ void clear_list_button_clicked()
 					SIZE	 		TEXT NOT NULL	,\
 					FILE_NAME      	TEXT	,\
 					FILE_LOCATION  	TEXT    ,\
-					DATE_ADDED		DATE    ,\
-					TARGET			TEXT	,\
-					FILE_EXISTANCE	BIT		);";
+					DATE_ADDED		TEXT    ,\
+					TARGET			TEXT	);";
 
     result = sqlite3_open("X-Board.db", &DB);
     result = sqlite3_exec(DB, sql, NULL, 0, &messaggeError);
@@ -317,8 +319,7 @@ int main(int argc, char *argv[])
 					FILE_NAME      	TEXT	,\
 					FILE_LOCATION  	TEXT    ,\
 					DATE_ADDED		DATE    ,\
-					TARGET			TEXT	,\
-					FILE_EXISTANCE	BIT		);";
+					TARGET			TEXT	);";
     int result = 0;
     result = sqlite3_open("X-Board.db", &DB);
     char *messaggeError;
