@@ -40,7 +40,6 @@ GtkClipboard *selected_clipboard;
 
 int absolute_path(char *, char *);
 
-
 int setdata(void *data, int count, char **cell_data, char **column_name)
 {
     gtk_tree_store_append(Main_Tree_Store, &iter1, NULL);
@@ -57,27 +56,26 @@ static int additional_info(void *data, int argc, char **argv, char **azColName)
         char disp[1000] = {0};
         sprintf(disp, "\n\n\n\n\tDATE ADDED : %s\n\n\tTARGET : %s\0", &argv[3][0], &argv[4][0]);
         gtk_text_buffer_set_text(buffer, disp, -1);
-
     }
-    else if(strcmp(&argv[0][0], "File") == 0)
+    else if (strcmp(&argv[0][0], "File") == 0)
     {
         char disp[1000] = {0};
-        int flg = absolute_path(&argv[2][0],NULL);
+        int flg = absolute_path(&argv[2][0], NULL);
         sprintf(disp, "\n\n\n\n\tFILE NAME : %s\n\n\tFILE LOCATION : %s\n\n\
         DATE ADDED : %s\n\n\tTARGET : %s\n\n\tEXISTENCE : %d\0",
-        &argv[1][0], &argv[2][0], &argv[3][0], &argv[4][0],flg);
+                &argv[1][0], &argv[2][0], &argv[3][0], &argv[4][0], flg);
         gtk_text_buffer_set_text(buffer, disp, -1);
     }
     return 0;
 }
 
-void on_select_changed(GtkWidget *selection)
+void on_select_changed(GtkWidget *selected)
 {
     GtkTreeIter iter;
     GtkTreeModel *model;
     gchar *selected_value;
 
-    if (gtk_tree_selection_get_selected(GTK_TREE_SELECTION(selection), &model, &iter) == FALSE)
+    if (gtk_tree_selection_get_selected(GTK_TREE_SELECTION(selected), &model, &iter) == FALSE)
     {
         return;
     }
@@ -97,6 +95,7 @@ void remove_data(GtkWidget *menu_item_remove, gpointer userdata)
     GtkTreeIter iter;
     GtkTreeModel *model;
     gchar *selected_value;
+    printf("sdfsdfv");
     if (gtk_tree_selection_get_selected(GTK_TREE_SELECTION(userdata), &model, &iter) != FALSE)
     {
         char sql[100] = {0};
@@ -105,20 +104,20 @@ void remove_data(GtkWidget *menu_item_remove, gpointer userdata)
         sqlite3_exec(DB, sql, NULL, NULL, NULL);
         sqlite3_exec(DB, "COMMIT", NULL, NULL, NULL);
         gtk_tree_store_remove(Main_Tree_Store, &iter);
-        gtk_text_buffer_set_text(buffer, "\n\n\n\n\tSelect a file list item for additional data", -1);
+        gtk_text_buffer_set_text(buffer, "\n\n\n\n\tSelect a list item for additional data", -1);
     }
 }
 
-void view_popup_menu(GdkEventButton *click_event, GtkTreeSelection *selection, gpointer userdata)
+void view_popup_menu(GdkEventButton *click_event, gpointer userdata)
 {
-    GtkWidget *Context_menu, *menu_item_remove;
+    GtkWidget *Context_menu, *menu_item_remove, *menu_add_to clip;
 
     Context_menu = gtk_menu_new();
 
     menu_item_remove = gtk_menu_item_new_with_label("Remove");
 
     g_signal_connect(menu_item_remove, "activate",
-                     (GCallback)remove_data, selection);
+                     (GCallback)remove_data, userdata);
 
     gtk_menu_shell_append(GTK_MENU_SHELL(Context_menu), menu_item_remove);
 
@@ -129,30 +128,30 @@ void view_popup_menu(GdkEventButton *click_event, GtkTreeSelection *selection, g
                    gdk_event_get_time((GdkEvent *)click_event));
 }
 
-gboolean view_onButtonPressed(GdkEventButton *click_event, gpointer userdata)
+void view_onButtonPressed(GtkWidget *treeview, GdkEventButton *click_event, gpointer userdata)
 {
     if (click_event->type == GDK_BUTTON_PRESS && click_event->button == 3)
     {
-        GtkTreeSelection *selection;
 
-        selection = gtk_tree_view_get_selection(GTK_TREE_VIEW(Main_Content_Tree));
+        GtkTreeSelection *selected;
 
-        if (gtk_tree_selection_count_selected_rows(selection) <= 1)
+        selected = gtk_tree_view_get_selection(GTK_TREE_VIEW(treeview));
+
+        if (gtk_tree_selection_count_selected_rows(selected) <= 1)
         {
             GtkTreePath *path;
 
-            if (gtk_tree_view_get_path_at_pos(GTK_TREE_VIEW(Main_Content_Tree), click_event->x, click_event->y, &path, NULL, NULL, NULL))
+            if (gtk_tree_view_get_path_at_pos(GTK_TREE_VIEW(treeview),
+                                              click_event->x, click_event->y,
+                                              &path, NULL, NULL, NULL))
             {
-                gtk_tree_selection_unselect_all(selection);
-                gtk_tree_selection_select_path(selection, path);
+                gtk_tree_selection_unselect_all(selected);
+                gtk_tree_selection_select_path(selected, path);
                 gtk_tree_path_free(path);
-                view_popup_menu(click_event, selection, userdata);
             }
+            view_popup_menu(click_event, selected);
         }
-
-        return TRUE;
     }
-    return FALSE;
 }
 
 int absolute_path(char *file_path, char *full_path)
@@ -165,7 +164,7 @@ int absolute_path(char *file_path, char *full_path)
 
 void findSize(char *path, char *size)
 {
-    char str[10000];
+    char str[100];
     sprintf(str, "du -sh --apparent-size %s > size.txt", path);
     system(str);
     FILE *fp;
@@ -184,26 +183,25 @@ void add_content(GtkClipboard *clipboard, const gchar *text, gpointer data)
     int flg;
     char size[20];
 
-    flg = absolute_path((char*)text, NULL);
-   
+    flg = absolute_path((char *)text, NULL);
+
     if (!flg)
     {
         findSize((char *)text, size);
         sprintf(sql, "INSERT INTO XBOARD_DATA (CONTENT,CONTENT_TYPE,SIZE,FILE_NAME,FILE_LOCATION,DATE_ADDED,TARGET)\
-        VALUES(\"%s\",\"File\",\"%s\",\"%s\",\"%s\",\"%d/%d/%d\",\"x-special/gnome-copied-files\");"
-        ,text, size, rindex(text,'/')+1, text, tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday);
+        VALUES(\"%s\",\"File\",\"%s\",\"%s\",\"%s\",\"%d/%d/%d\",\"x-special/gnome-copied-files\");",
+                text, size, rindex(text, '/') + 1, text, tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday);
         gtk_tree_store_append(Main_Tree_Store, &iter1, NULL);
         gtk_tree_store_set(Main_Tree_Store, &iter1, 0, text, -1);
         gtk_tree_store_set(Main_Tree_Store, &iter1, 1, "File", -1);
         gtk_tree_store_set(Main_Tree_Store, &iter1, 2, size, -1);
-        //  printf("sql: %s\nmess:%s",sql);
     }
     else
     {
         sprintf(sql, "INSERT INTO XBOARD_DATA (CONTENT,CONTENT_TYPE,SIZE,DATE_ADDED,TARGET) VALUES(\"%s\",\"Text\",\"%d characters\",\"%d/%d/%d\",\"text-plain/\");",
-        text, (int)strlen(text), tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday);
-        char char_count[15]={0};
-        sprintf(char_count,"%d characters",(int)strlen(text));
+                text, (int)strlen(text), tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday);
+        char char_count[15] = {0};
+        sprintf(char_count, "%d characters", (int)strlen(text));
         gtk_tree_store_append(Main_Tree_Store, &iter1, NULL);
         gtk_tree_store_set(Main_Tree_Store, &iter1, 0, text, -1);
         gtk_tree_store_set(Main_Tree_Store, &iter1, 1, "Text", -1);
@@ -211,11 +209,12 @@ void add_content(GtkClipboard *clipboard, const gchar *text, gpointer data)
     }
     printf("%s\n", sql);
     char *message;
-    int exit=sqlite3_exec(DB, sql, NULL, 0, &message);
-    if (exit != SQLITE_OK) { 
+    int exit = sqlite3_exec(DB, sql, NULL, 0, &message);
+    if (exit != SQLITE_OK)
+    {
         printf("Error Insert\n");
         sqlite3_free(&message);
-    } 
+    }
     else
         printf("Records created Successfully!\n");
 }
